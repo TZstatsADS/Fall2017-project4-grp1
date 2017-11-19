@@ -1,0 +1,67 @@
+---
+title: "Collaborative Filtering Algorithms"
+author: "Jing Zhao (jz2786)"
+date: "11/19/2017"
+output: pdf_document
+---
+
+## Load Data
+```{r}
+dataset1_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+```
+
+## Convert raw dataset
+```{r}
+Transformer <- function(data.set){
+  columns.data <- sort(unique(data.set$Movie))
+  rows.data <- sort(unique(data.set$User))
+  Table_ <- matrix(0,nrow = length(rows.data), ncol = length(columns.data))
+  for(i in 1:length(columns.data)){
+    col.name <- columns.data[i]
+    index <- which(data.set$Movie == col.name)
+    scores <- data.set[index,4] #Scores
+    users <- data.set[index,3] #Users
+    index2 <- which(rows.data %in% users)
+    Table_[index2,i] = scores
+    Table_[!index2,i] = 0
+    }
+  colnames(Table_) <- columns.data
+  rownames(Table_) <- rows.data
+  return(Table_)
+}
+Table_1 <- Transformer(dataset1_train)
+```
+
+## Pearson Correlation
+```{r}
+try1 = cor(t(Table_1),method = 'pearson')
+```
+
+## Selecting Neighborhoods - correlation_thresholding
+```{r}
+thresholding = 0.1
+subset.neighbor = floor(thresholding * nrow(try1))
+top.neighbors = matrix(0, ncol = subset.neighbor, nrow = nrow(try1))
+for(i in 1:nrow(try1)){
+  vec1 = try1[i,]
+  n = length(vec1)
+  index_ = which(vec1 %in% sort(vec1,partial=n-1)[(n-1):(n - subset.neighbor)])
+  top.neighbors[i,] = index_[1:subset.neighbor]
+}
+```
+
+#Prediction
+```{r}
+#User: index of this user
+#try: weights Table
+rating.pred <- function(data.set, user, item, try, top.neighbors){
+  avg.rating = mean(data.set[user,])
+  neighbor.index = top.neighbors[user,]
+  neighbor.weights = try[user,neighbor.index]
+  neighbor.ratings = data.set[neighbor.index, item]
+  neighbor.avg = mean(data.set[neighbor.index, ])
+  pred =avg.rating +  sum((neighbor.ratings-neighbor.avg) * neighbor.weights)/sum(neighbor.weights)
+  return(pred)
+}
+```
+
