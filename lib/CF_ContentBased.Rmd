@@ -32,9 +32,22 @@ Transformer <- function(data.set){
 Table_1 <- Transformer(dataset1_train)
 ```
 
-## Pearson Correlation
+## Correlation
 ```{r}
-try1 = cor(t(Table_1),method = 'pearson')
+cal_weight <- function(data,method){
+  
+  if(method == 'pearson'){
+    result <- as.data.frame(cor(t(data),method = 'pearson'))
+  }else if(method == 'spearman'){
+    result <- as.data.frame(cor(t(data),method = 'spearman'))
+  }else if(method == 'vector'){
+    result <- as.data.frame(cosine(t(movie_train)))
+  }
+  
+}
+pearson_weight <- cal_weight(Table_1,'pearson')
+spearman_weight <- cal_weight(Table_1,'spearman')
+vector_weight <- cal_weight(Table_1,'vector')
 ```
 
 
@@ -104,7 +117,7 @@ variance_weight_matrix <- function(mat_dim_1, mat = Table_1){
   return(mat_weight)
 }
 
-mat_variance_weight <- variance_weight_matrix(dim(Table_1)[1], mat = Table_1)
+#mat_variance_weight <- variance_weight_matrix(dim(Table_1)[1], mat = Table_1)
 
 ```
 
