@@ -184,3 +184,16 @@ rating.pred <- function(data.set, user, item, try, top.neighbors){
 }
 ```
 
+
+## Evaluation - ROC
+
+```{r}
+evaluation.roc <- function(roc_value, mat, mat.true){
+  mat.criterion <- matrix(roc_value, nrow = nrow(mat), ncol = ncol(mat))
+  same_num <- sum((mat >= mat.criterion) == (mat.true >= mat.criterion))
+  n <- sum(mat != matrix(0, nrow=nrow(mat), ncol=ncol(mat)))
+  return(same_num/n)
+}
+```
+
+
