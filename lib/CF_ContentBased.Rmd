@@ -8,9 +8,11 @@ output: pdf_document
 ## Load Data
 ```{r}
 dataset1_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+
+dataset2_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
 ```
 
-## Convert raw dataset
+## Convert raw dataset1
 ```{r}
 Transformer <- function(data.set){
   columns.data <- sort(unique(data.set$Movie))
@@ -30,6 +32,37 @@ Transformer <- function(data.set){
   return(Table_)
 }
 Table_1 <- Transformer(dataset1_train)
+```
+
+## Convert raw dataset2
+
+```{r}
+Transformer2 <- function(data){
+  user_num <- which(data$V1 == 'C')
+  user_id <- data$V2[user_num]
+  page_id <- unique(data$V2[which(data$V1 == 'V')])
+  Table_2 <- matrix(0, nrow=length(user_id), ncol=length(page_id))
+  rownames(Table_2) <- as.character(user_id)
+  colnames(Table_2) <- as.character(page_id)
+  for (i in 1:length(user_num)){
+    start_num <- user_num[i]
+    if (i != length(user_num)){
+        end_num <- user_num[i+1]
+    }
+    else {
+      end_num <- nrow(data)+1
+    }
+    
+    user_id_mat <- as.character(user_id[i])
+  
+    for (j in (start_num+1):(end_num-1)){
+      page_id_mat <- as.character(data$V2[j])
+      Table_2[user_id_mat, page_id_mat] <- 1
+    }
+  }
+  return(Table_2)
+}
+Table_2 <- Transformer2(dataset2_train)
 ```
 
 ## Correlation
