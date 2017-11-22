@@ -16,7 +16,6 @@ dataset2_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
 >>>>>>> 653ab6c2c470a7bc8e6427530acc8213055417e7
 ```
 
-## Convert raw dataset
 ## Convert raw dataset1
 ```{r}
 Transformer <- function(data.set){
