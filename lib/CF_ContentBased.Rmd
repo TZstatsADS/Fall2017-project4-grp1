@@ -8,6 +8,7 @@ output: pdf_document
 ## Load Data
 ```{r}
 dataset1_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+dataset1_test <- read.csv("../data/data_sample/eachmovie_sample/data_test.csv")
 ```
 
 ## Convert raw dataset
@@ -23,13 +24,16 @@ Transformer <- function(data.set){
     users <- data.set[index,3] #Users
     index2 <- which(rows.data %in% users)
     Table_[index2,i] = scores
-    Table_[!index2,i] = 0
+    Table_[!index2,i] = NA
     }
   colnames(Table_) <- columns.data
   rownames(Table_) <- rows.data
   return(Table_)
 }
 Table_1 <- Transformer(dataset1_train)
+Table_2 <- Transformer(dataset1_test)
+save(Table_1, file = "movie_train.RData")
+save(Table_2, file = "movie_test.RData")
 ```
 
 ## Correlation
