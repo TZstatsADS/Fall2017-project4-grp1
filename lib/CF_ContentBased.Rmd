@@ -109,7 +109,7 @@ significance_weight_assign <- function(i, j, mat=Table_1, not_rate = 0 ){
 
 significance_weight_matrix <- function(mat_dim_1, mat = Table_1){
   mat_weight = matrix(1, nrow=mat_dim_1, ncol=mat_dim_1)
-  for (i in 1:mat_dim_1){
+  for (i in 1:(mat_dim_1-1)){
     for (j in (i+1):mat_dim_1){
       weight <- significance_weight_assign(i, j, mat=mat)
       mat_weight[i, j] <- weight
@@ -120,7 +120,12 @@ significance_weight_matrix <- function(mat_dim_1, mat = Table_1){
   return(mat_weight)
 }
 
-# mat_significance_weight <- significance_weight_matrix(dim(Table_1)[1], mat = Table_1)
+#mat_significance_weight <- significance_weight_matrix(dim(Table_1)[1], mat = Table_1)
+#save(mat_significance_weight, file = "significance_weight.RData")
+
+#mat_significance_weight <- significance_weight_matrix(dim(Table_2)[1], mat = Table_2)
+#save(mat_significance_weight, file = "significance_weight2.RData")
+
 
 ```
 
@@ -145,7 +150,7 @@ variance_weight_assign <- function(i, j, v, mat=Table_1){
 variance_weight_matrix <- function(mat_dim_1, mat = Table_1){
   mat_weight = matrix(1, nrow=mat_dim_1, ncol=mat_dim_1)
   v <- find_var(mat = mat)
-  for (i in 1:mat_dim_1){
+  for (i in 1:(mat_dim_1-1)){
     print(i)
     print(Sys.time())
     for (j in (i+1):mat_dim_1){
@@ -158,6 +163,10 @@ variance_weight_matrix <- function(mat_dim_1, mat = Table_1){
 }
 
 #mat_variance_weight <- variance_weight_matrix(dim(Table_1)[1], mat = Table_1)
+#save(mat_variance_weight, file = "variance_weight.RData")
+
+#mat_variance_weight <- variance_weight_matrix(dim(Table_2)[1], mat = Table_2)
+#save(mat_variance_weight, file = "variance_weight2.RData")
 
 ```
 
