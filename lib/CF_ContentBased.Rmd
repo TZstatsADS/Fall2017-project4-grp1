@@ -8,10 +8,16 @@ output: pdf_document
 ## Load Data
 ```{r}
 dataset1_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+<<<<<<< HEAD
 dataset1_test <- read.csv("../data/data_sample/eachmovie_sample/data_test.csv")
+=======
+
+dataset2_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
+>>>>>>> 653ab6c2c470a7bc8e6427530acc8213055417e7
 ```
 
 ## Convert raw dataset
+## Convert raw dataset1
 ```{r}
 Transformer <- function(data.set){
   columns.data <- sort(unique(data.set$Movie))
@@ -34,6 +40,37 @@ Table_1 <- Transformer(dataset1_train)
 Table_2 <- Transformer(dataset1_test)
 save(Table_1, file = "movie_train.RData")
 save(Table_2, file = "movie_test.RData")
+```
+
+## Convert raw dataset2
+
+```{r}
+Transformer2 <- function(data){
+  user_num <- which(data$V1 == 'C')
+  user_id <- data$V2[user_num]
+  page_id <- unique(data$V2[which(data$V1 == 'V')])
+  Table_2 <- matrix(0, nrow=length(user_id), ncol=length(page_id))
+  rownames(Table_2) <- as.character(user_id)
+  colnames(Table_2) <- as.character(page_id)
+  for (i in 1:length(user_num)){
+    start_num <- user_num[i]
+    if (i != length(user_num)){
+        end_num <- user_num[i+1]
+    }
+    else {
+      end_num <- nrow(data)+1
+    }
+    
+    user_id_mat <- as.character(user_id[i])
+  
+    for (j in (start_num+1):(end_num-1)){
+      page_id_mat <- as.character(data$V2[j])
+      Table_2[user_id_mat, page_id_mat] <- 1
+    }
+  }
+  return(Table_2)
+}
+Table_2 <- Transformer2(dataset2_train)
 ```
 
 ## Correlation
@@ -154,4 +191,17 @@ rating.pred <- function(data.set, user, item, try, top.neighbors){
   return(pred)
 }
 ```
+
+
+## Evaluation - ROC
+
+```{r}
+evaluation.roc <- function(roc_value, mat, mat.true){
+  mat.criterion <- matrix(roc_value, nrow = nrow(mat), ncol = ncol(mat))
+  same_num <- sum((mat >= mat.criterion) == (mat.true >= mat.criterion))
+  n <- sum(mat != matrix(0, nrow=nrow(mat), ncol=ncol(mat)))
+  return(same_num/n)
+}
+```
+
 
