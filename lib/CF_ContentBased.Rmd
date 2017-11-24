@@ -8,12 +8,12 @@ output: pdf_document
 ## Load Data
 ```{r}
 dataset1_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
-<<<<<<< HEAD
+
 dataset1_test <- read.csv("../data/data_sample/eachmovie_sample/data_test.csv")
-=======
+
 
 dataset2_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
->>>>>>> 653ab6c2c470a7bc8e6427530acc8213055417e7
+
 ```
 
 ## Convert raw dataset1
@@ -21,7 +21,7 @@ dataset2_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
 Transformer <- function(data.set){
   columns.data <- sort(unique(data.set$Movie))
   rows.data <- sort(unique(data.set$User))
-  Table_ <- matrix(0,nrow = length(rows.data), ncol = length(columns.data))
+  Table_ <- matrix(NA,nrow = length(rows.data), ncol = length(columns.data))
   for(i in 1:length(columns.data)){
     col.name <- columns.data[i]
     index <- which(data.set$Movie == col.name)
