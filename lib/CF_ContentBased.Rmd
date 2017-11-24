@@ -203,4 +203,12 @@ evaluation.roc <- function(roc_value, mat, mat.true){
 }
 ```
 
+## Evaluation - MAE
+```{r}
+evaluation.mae <- function(pred.val, true.val){
+  mae <- sum(abs(pred.val - true.val))/nrow(pred.val)
+  return(mae)
+}
+```
+
 
