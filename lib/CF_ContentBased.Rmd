@@ -72,22 +72,58 @@ Transformer2 <- function(data){
 Table_2 <- Transformer2(dataset2_train)
 ```
 
-## Correlation
+## Similarity Weight
 ```{r}
+######## function to calculate similarity weight ##########
 cal_weight <- function(data,method){
-  
-  if(method == 'pearson'){
-    result <- as.data.frame(cor(t(data),method = 'pearson'))
-  }else if(method == 'spearman'){
-    result <- as.data.frame(cor(t(data),method = 'spearman'))
-  }else if(method == 'vector'){
-    result <- as.data.frame(cosine(t(movie_train)))
+  ## calculate similarity weight
+  ## input: data - movie data or MS data in wide form
+  ##        method - 'pearson' or 'spaerman' or 'vector'
+  ## output: similarity weight matrix
+  library(lsa)
+  data <- as.matrix(data)
+  weight_mat <- matrix(NA,nrow=nrow(data),ncol=nrow(data))
+  for(i in 1:nrow(data)){
+    
+    #index <- t(apply(data,1,function(x){return((!is.na(x))&(!is.na(data[i,])))}))
+    weight_mat[i,] <- apply(data,1,function(x){
+      index <- (!is.na(x))&(!is.na(data[i,]))
+      if(sum(index)==0){
+        return(0)
+      }else{
+        if(method == 'pearson'){
+          return(cor(data[i,index],x[index],method='pearson'))
+        }else if(method == 'spearman'){
+          return(cor(data[i,index],x[index],method='spearman'))
+        }else if(method == 'vector'){
+          return(cosine(data[i,index],x[index]))
+        }
+      }
+      
+      
+    })
+    
   }
-  
+  return(round(weight_mat,4))
 }
-pearson_weight <- cal_weight(Table_1,'pearson')
-spearman_weight <- cal_weight(Table_1,'spearman')
-vector_weight <- cal_weight(Table_1,'vector')
+
+# pearson_weight <- cal_weight(Table_1,'pearson')
+# spearman_weight <- cal_weight(Table_1,'spearman')
+# vector_weight <- cal_weight(Table_1,'vector')
+# 
+# save(pearson_weight,file = './pearson_weight.RData')
+# save(spearman_weight,file='./spearman_weight.RData')
+# save(vector_weight,file = './vector_weight.RData')
+# 
+# 
+# pearson_weight_MS <- cal_weight(Table_2,'pearson')
+# spearman_weight_MS <- cal_weight(Table_2,'spearman')
+# vector_weight_MS <- cal_weight(Table_2,'vector')
+# 
+# save(pearson_weight_MS,file = './pearson_weight_MS.RData')
+# save(spearman_weight_MS,file='./spearman_weight_MS.RData')
+# save(vector_weight_MS,file = './vector_weight_MS.RData')
+
 ```
 
 
