@@ -7,16 +7,16 @@ output: pdf_document
 
 ## Load Data
 ```{r}
-dataset1_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+movie_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+movie_test <- read.csv("../data/data_sample/eachmovie_sample/data_test.csv")
 
-dataset1_test <- read.csv("../data/data_sample/eachmovie_sample/data_test.csv")
 
-
-dataset2_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
+MS_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
+MS_test <- read.csv("../data/data_sample/MS_sample/data_train.csv")
 
 ```
 
-## Convert raw dataset1
+## Convert raw movie data
 ```{r}
 Transformer <- function(data.set){
   columns.data <- sort(unique(data.set$Movie))
@@ -35,13 +35,13 @@ Transformer <- function(data.set){
   rownames(Table_) <- rows.data
   return(Table_)
 }
-Table_1 <- Transformer(dataset1_train)
-Table_2 <- Transformer(dataset1_test)
-save(Table_1, file = "movie_train.RData")
-save(Table_2, file = "movie_test.RData")
+movie_train <- Transformer(movie_train)
+movie_test <- Transformer(movie_test)
+save(movie_train, file = "../output/movie_train.RData")
+save(movie_test, file = "../output/movie_test.RData")
 ```
 
-## Convert raw dataset2
+## Convert raw MS data
 
 ```{r}
 Transformer2 <- function(data){
@@ -69,7 +69,11 @@ Transformer2 <- function(data){
   }
   return(Table_2)
 }
-Table_2 <- Transformer2(dataset2_train)
+MS_train <- Transformer2(MS_train)
+MS_test <- Transformer2(MS_test)
+save(MS_train, file = "../output/MS_train.RData")
+save(MS_test, file = "../output/MS_test.RData")
+
 ```
 
 ## Similarity Weight
@@ -107,18 +111,18 @@ cal_weight <- function(data,method){
   return(round(weight_mat,4))
 }
 
-# pearson_weight <- cal_weight(Table_1,'pearson')
-# spearman_weight <- cal_weight(Table_1,'spearman')
-# vector_weight <- cal_weight(Table_1,'vector')
+# pearson_weight <- cal_weight(movie_train,'pearson')
+# spearman_weight <- cal_weight(movie_train,'spearman')
+# vector_weight <- cal_weight(movie_train,'vector')
 # 
 # save(pearson_weight,file = './pearson_weight.RData')
 # save(spearman_weight,file='./spearman_weight.RData')
 # save(vector_weight,file = './vector_weight.RData')
 # 
 # 
-# pearson_weight_MS <- cal_weight(Table_2,'pearson')
-# spearman_weight_MS <- cal_weight(Table_2,'spearman')
-# vector_weight_MS <- cal_weight(Table_2,'vector')
+# pearson_weight_MS <- cal_weight(MS_train,'pearson')
+# spearman_weight_MS <- cal_weight(MS_train,'spearman')
+# vector_weight_MS <- cal_weight(MS_train,'vector')
 # 
 # save(pearson_weight_MS,file = './pearson_weight_MS.RData')
 # save(spearman_weight_MS,file='./spearman_weight_MS.RData')
@@ -131,7 +135,7 @@ cal_weight <- function(data,method){
 ## Significance Weighting
 ```{r}
 
-significance_weight_assign <- function(i, j, mat=Table_1, not_rate = 0 ){
+significance_weight_assign <- function(i, j, mat=movie_train, not_rate = 0 ){
   r_i <- mat[i, ]
   r_j <- mat[j, ]
   n <- length(intersect(which(r_i != 0), which(r_j != 0)))
@@ -143,7 +147,7 @@ significance_weight_assign <- function(i, j, mat=Table_1, not_rate = 0 ){
   }
 }
 
-significance_weight_matrix <- function(mat_dim_1, mat = Table_1){
+significance_weight_matrix <- function(mat_dim_1, mat = movie_train){
   mat_weight = matrix(1, nrow=mat_dim_1, ncol=mat_dim_1)
   for (i in 1:(mat_dim_1-1)){
     for (j in (i+1):mat_dim_1){
@@ -156,10 +160,10 @@ significance_weight_matrix <- function(mat_dim_1, mat = Table_1){
   return(mat_weight)
 }
 
-#mat_significance_weight <- significance_weight_matrix(dim(Table_1)[1], mat = Table_1)
+#mat_significance_weight <- significance_weight_matrix(dim(movie_train)[1], mat = movie_train)
 #save(mat_significance_weight, file = "significance_weight.RData")
 
-#mat_significance_weight <- significance_weight_matrix(dim(Table_2)[1], mat = Table_2)
+#mat_significance_weight <- significance_weight_matrix(dim(MS_train)[1], mat = MS_train)
 #save(mat_significance_weight, file = "significance_weight2.RData")
 
 
@@ -168,29 +172,29 @@ significance_weight_matrix <- function(mat_dim_1, mat = Table_1){
 ## Variance Weighting
 
 ```{r}
-find_var <- function(mat=Table_1){
-  var_vector <- apply(Table_1, 2, var)
+find_var <- function(mat=movie_train){
+  var_vector <- apply(movie_train, 2, var)
   var_max <- max(var_vector)
   var_min <- min(var_vector)
   v <- (var_vector - var_min)/var_max
   return(v)
 }
 
-variance_weight_assign <- function(i, j, v, mat=Table_1){
+variance_weight_assign <- function(i, j, v, mat=movie_train){
   r_i <- scale(mat[i, ])
   r_j <- scale(mat[j, ])
   weight <- sum(v*r_i*r_j)/sum(v)
   return(weight)
 }
 
-variance_weight_matrix <- function(mat_dim_1, mat = Table_1){
+variance_weight_matrix <- function(mat_dim_1, mat = movie_train){
   mat_weight = matrix(1, nrow=mat_dim_1, ncol=mat_dim_1)
   v <- find_var(mat = mat)
   for (i in 1:(mat_dim_1-1)){
     print(i)
     print(Sys.time())
     for (j in (i+1):mat_dim_1){
-      weight <- variance_weight_assign(i, j, v, mat = Table_1)
+      weight <- variance_weight_assign(i, j, v, mat = movie_train)
       mat_weight[i, j] <- weight
       mat_weight[j, i] <- weight
     }
@@ -198,10 +202,10 @@ variance_weight_matrix <- function(mat_dim_1, mat = Table_1){
   return(mat_weight)
 }
 
-#mat_variance_weight <- variance_weight_matrix(dim(Table_1)[1], mat = Table_1)
+#mat_variance_weight <- variance_weight_matrix(dim(movie_train)[1], mat = movie_train)
 #save(mat_variance_weight, file = "variance_weight.RData")
 
-#mat_variance_weight <- variance_weight_matrix(dim(Table_2)[1], mat = Table_2)
+#mat_variance_weight <- variance_weight_matrix(dim(MS_train)[1], mat = MS_train)
 #save(mat_variance_weight, file = "variance_weight2.RData")
 
 ```
@@ -256,4 +260,26 @@ evaluation.mae <- function(pred.val, true.val){
 }
 ```
 
+## Evaluation - Rank Score
+```{r}
+rank_score <- function(predicted_test,true_test){
+  ## function to calculate rank score of predicted value
+  ## input: predicted_test - predicted value matrix of test data
+  ##        true_test - test data matrix
+  ## output: rank score
+  predicted_test[is.na(predicted_test)] <- 0
+  true_test[is.na(true_test)] <- 0
+  
+  rank_mat <- ncol(true_test)+1-t(apply(true_test,1,function(x){return(rank(x,ties.method = 'first'))}))
+  
+  #R_a_denominator <- 1/(2^((rank_mat-1)/4))
+  #R_a_nominator <- max(predicted_test-apply(predicted_test,1,mean))
+                    
+  R_a <- apply(1/(2^((rank_mat-1)/4)) * predicted_test,1,sum)
+  R_a_max <- apply(1/(2^((rank_mat-1)/4)) * true_test,1,sum)
+  R <- 100*sum(R_a)/sum(R_a_max)
+  return(R)
+  
+}
+```
 
