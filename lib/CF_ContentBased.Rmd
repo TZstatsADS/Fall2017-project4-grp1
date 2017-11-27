@@ -250,6 +250,7 @@ pred.matrix <- function(testdat, traindat, simweights, top.neighbors){
       prediction.matrix[i,] = avg.ratings[i] + apply((neighbor.ratings-neighbor.avg) * neighbor.weights, 2, sum, na.rm=T) / sum(neighbor.weights, na.rm = T)
       prediction.matrix[i,test.loc[i,]] = NA
   }
+  prediction.matrix = prediction.matrix[,1:nrow(testdat)]
   return(prediction.matrix)
 }
 
@@ -273,7 +274,6 @@ evaluation.roc <- function(roc_value, mat, mat.true){
 ## Evaluation - MAE
 ```{r}
 evaluation.mae <- function(pred.val, true.val){
-  pred.val = pred.val[,1:ncol(true.val)]
   mae <- mean(abs(pred.val - true.val), na.rm = T)
   return(mae)
 }
