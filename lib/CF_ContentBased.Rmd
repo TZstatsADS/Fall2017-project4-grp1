@@ -35,10 +35,10 @@ Transformer <- function(data.set){
   rownames(Table_) <- rows.data
   return(Table_)
 }
-movie_train <- Transformer(movie_train)
-movie_test <- Transformer(movie_test)
-save(movie_train, file = "../output/movie_train.RData")
-save(movie_test, file = "../output/movie_test.RData")
+# movie_train <- Transformer(movie_train)
+# movie_test <- Transformer(movie_test)
+# save(movie_train, file = "../output/movie_train.RData")
+# save(movie_test, file = "../output/movie_test.RData")
 ```
 
 ## Convert raw MS data
@@ -69,10 +69,10 @@ Transformer2 <- function(data){
   }
   return(Table_2)
 }
-MS_train <- Transformer2(MS_train)
-MS_test <- Transformer2(MS_test)
-save(MS_train, file = "../output/MS_train.RData")
-save(MS_test, file = "../output/MS_test.RData")
+# MS_train <- Transformer2(MS_train)
+# MS_test <- Transformer2(MS_test)
+# save(MS_train, file = "../output/MS_train.RData")
+# save(MS_test, file = "../output/MS_test.RData")
 
 ```
 
@@ -211,14 +211,28 @@ variance_weight_matrix <- function(mat_dim_1, mat = movie_train){
 ```
 
 
+## Load saved data
+```{r}
+load('../output/movie_train.RData')
+load('../output/movie_test.RData')
+load('../output/MS_train.RData')
+load('../output/MS_test.RData')
+
+load('../output/pearson_weight.RData')
+load('../output/pearson_weight_MS.RData')
+load('../output/spearman_weight.RData')
+load('../output/spearman_weight_MS.RData')
+load('../output/vector_weight.RData')
+load('../output/vector_weight_MS.RData')
+```
+
+
 
 ## Selecting Neighborhoods - correlation_thresholding
 ```{r}
-load('../output/movie_test.RData')
-load('../output/pearson_weight.RData')
-load('../output/movie_train.RData')
+
 #thresholding = 0.1
-neighbors.select <- function(simweights, thresholding = 0.5){
+neighbors.select <- function(simweights, thresholding = 0.0025){
   #subset.neighbor = floor(thresholding * nrow(try1))
   top.neighbors = list()
   coverage = 0
@@ -231,32 +245,60 @@ neighbors.select <- function(simweights, thresholding = 0.5){
   return(top.neighbors)
 }
 results = neighbors.select(pearson_weight)
+results_simrank <- neighbors.select(user_sim)
+```
+
+```{r}
+neighbors_pearson_movie <- neighbors.select(pearson_weight)
+neighbors_spearman_movie <- neighbors.select(spearman_weight)
+neighbors_vector_movie <- neighbors.select(vector_weight)
+
+neighbors_pearson_MS <- neighbors.select(pearson_weight_MS)
+neighbors_spearman_MS <- neighbors.select(spearman_weight_MS)
+neighbors_vector_MS <- neighbors.select(vector_weight_MS)
 
 ```
+
 
 #Prediction
 ```{r}
 #User: index of this user
 #try: weights Table
 pred.matrix <- function(testdat, traindat, simweights, top.neighbors){
-  prediction.matrix = matrix(NA, ncol = ncol(traindat), nrow = nrow(traindat))
+  prediction.matrix = matrix(NA, ncol = ncol(testdat), nrow = nrow(testdat))
   test.loc = is.na(testdat)
   avg.ratings = apply(traindat, 1, mean, na.rm = T)
+  neighbor.avg <- apply(traindat,1,mean,na.rm=T)
  # neighbor.weights = try[user,top.neighbors]
   for(i in 1:nrow(traindat)){
+      train.col = colnames(testdat)[which(!is.na(testdat[i,]))]
+      #train.loc = traindat[i,train.col]
       neighbor.weights = simweights[i,top.neighbors[[i]]]
-      neighbor.ratings = traindat[top.neighbors[[i]], ]
-      neighbor.avg = apply(traindat[top.neighbors[[i]], ],1,mean,na.rm= T)
-      prediction.matrix[i,] = avg.ratings[i] + apply((neighbor.ratings-neighbor.avg) * neighbor.weights, 2, sum, na.rm=T) / sum(neighbor.weights, na.rm = T)
+      neighbor.ratings = traindat[top.neighbors[[i]], train.col]
+      # neighbor.avg = ifelse(length(top.neighbors[[i]]) <2, mean(traindat[top.neighbors[[i]], !test.loc[i,]]),apply(traindat[top.neighbors[[i]], ],1,mean,na.rm= T))
+      prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i] + ifelse(length(top.neighbors[[i]]) <2,(neighbor.ratings-neighbor.avg[top.neighbors[[i]]]) * neighbor.weights, apply((neighbor.ratings-neighbor.avg[top.neighbors[[i]]]) * neighbor.weights, 2, sum, na.rm=T)) / sum(neighbor.weights, na.rm = T), 0)
       prediction.matrix[i,test.loc[i,]] = NA
   }
-  prediction.matrix = prediction.matrix[,1:nrow(testdat)]
+  #prediction1 = prediction.matrix[,1:ncol(testdat)]
   return(prediction.matrix)
 }
 
-
-pearsonpred = pred.matrix(movie_test,movie_train,pearson_weight,pearson_top)
+pearsonpred = pred.matrix(movie_test,movie_train,pearson_weight,results)
+simrankpred = pred.matrix(movie_test,movie_train,user_sim,results_simrank)
 ```
+
+```{r}
+
+pred_pearson_movie <- pred.matrix(movie_test,movie_train,pearson_weight,neighbors_pearson_movie)
+pred_spearman_movie <- pred.matrix(movie_test,movie_train,spearman_weight,neighbors_spearman_movie)
+pred_vector_movie <- pred.matrix(movie_test,movie_train,vecotr_weight,neighbors_vecotr_movie)
+
+pred_pearson_MS <- pred.matrix(MS_test,MS_train,pearson_weight_MS,neighbors_pearson_MS)
+pred_spearman_MS <- pred.matrix(MS_test,MS_train,spearman_weight_MS,neighbors_spearman_MS)
+pred_vector_MS <- pred.matrix(MS_test,MS_train,vecotr_weight_MS,neighbors_vecotr_MS)
+
+```
+
 
 
 ## Evaluation - ROC
@@ -278,6 +320,7 @@ evaluation.mae <- function(pred.val, true.val){
   return(mae)
 }
 mae.pearson = evaluation.mae(pearsonpred, movie_test)
+mae.simraank = evaluation.mae(simrankpred, movie_test)
 ```
 
 ## Evaluation - Rank Score
@@ -299,6 +342,31 @@ rank_score <- function(predicted_test,true_test){
   R_a_max <- apply(1/(2^((rank_mat-1)/4)) * true_test,1,sum)
   R <- 100*sum(R_a)/sum(R_a_max)
   return(R)
+  
+}
+```
+
+## Combine 
+```{r}
+calculate <- function(data,SimWeight,SigWeight = F,VarWeight = F,EvaluateMethod){
+  ## input:
+  ## data - 'movie' or 'MS'
+  ## SimWeight - 'pearson' or 'spearman' or 'vector' or 'simrank'
+  ## SigWeight - T or F
+  ## VarWeight - T or F
+  ## EvaluateMethod - 'MAE' or 'ROC' or 'rank'
+  
+  ##### data
+  if(data=='movie'){
+    train_data <- movie_train
+    test_data <- movie_test
+  }else if(data=='MS'){
+    train_data <- MS_train
+    test_data <- MS_test
+  }
+  
+  ##### select neighbor
+  
   
 }
 ```
