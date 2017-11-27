@@ -214,30 +214,41 @@ variance_weight_matrix <- function(mat_dim_1, mat = movie_train){
 
 ## Selecting Neighborhoods - correlation_thresholding
 ```{r}
-thresholding = 0.1
-subset.neighbor = floor(thresholding * nrow(try1))
-top.neighbors = matrix(0, ncol = subset.neighbor, nrow = nrow(try1))
-for(i in 1:nrow(try1)){
-  vec1 = try1[i,]
-  n = length(vec1)
-  index_ = which(vec1 %in% sort(vec1,partial=n-1)[(n-1):(n - subset.neighbor)])
-  top.neighbors[i,] = index_[1:subset.neighbor]
+#thresholding = 0.1
+neighbors.select <- function(try1, thresholding = 0.1){
+  subset.neighbor = floor(thresholding * nrow(try1))
+  top.neighbors = matrix(0, ncol = subset.neighbor, nrow = nrow(try1))
+  for(i in 1:nrow(try1)){
+    vec1 = try1[i,]
+    n = length(vec1)
+    index_ = which(rank(vec1, ties.method = 'first') %in% 1:subset.neighbor)
+    top.neighbors[i,] = index_[1:subset.neighbor]
+  }
+  return(top.neighbors)
 }
+pearson_top = neighbors.select(pearson_weight)
+
 ```
 
 #Prediction
 ```{r}
 #User: index of this user
 #try: weights Table
-rating.pred <- function(data.set, user, item, try, top.neighbors){
-  avg.rating = mean(data.set[user,])
-  neighbor.index = top.neighbors[user,]
-  neighbor.weights = try[user,neighbor.index]
-  neighbor.ratings = data.set[neighbor.index, item]
-  neighbor.avg = mean(data.set[neighbor.index, ])
-  pred =avg.rating +  sum((neighbor.ratings-neighbor.avg) * neighbor.weights)/sum(neighbor.weights)
-  return(pred)
+pred.matrix <- function(testdat, try, top.neighbors){
+  prediction.matrix = matrix(NA, ncol = ncol(testdat), nrow = nrow(testdat))
+  avg.ratings = apply(testdat, 1, mean, na.rm = T)
+ # neighbor.weights = try[user,top.neighbors]
+  for(i in 1:nrow(testdat)){
+      neighbor.weights = try[i,top.neighbors[i,]]
+      neighbor.ratings = testdat[top.neighbors[i,], ]
+      neighbor.avg = apply(testdat[top.neighbors[i,], ],1,mean,na.rm= T)
+      prediction.matrix[i,] = avg.ratings[i] + apply((neighbor.ratings-neighbor.avg) * neighbor.weights, 2, sum, na.rm=T) / sum(neighbor.weights, na.rm = T)
+  }
+  return(prediction.matrix)
 }
+
+
+pearsonpred = pred.matrix(movie_test,pearson_weight,pearson_top)
 ```
 
 
@@ -250,14 +261,16 @@ evaluation.roc <- function(roc_value, mat, mat.true){
   n <- sum(mat != matrix(0, nrow=nrow(mat), ncol=ncol(mat)))
   return(same_num/n)
 }
+
 ```
 
 ## Evaluation - MAE
 ```{r}
 evaluation.mae <- function(pred.val, true.val){
-  mae <- sum(abs(pred.val - true.val))/nrow(pred.val)
+  mae <- sum(abs(pred.val - true.val, na.rm = T))/nrow(pred.val)
   return(mae)
 }
+mae.pearson = evaluation.mae(pearsonpred, pearson_weight)
 ```
 
 ## Evaluation - Rank Score
