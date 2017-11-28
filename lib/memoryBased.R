@@ -96,10 +96,13 @@ significance_weight_matrix <- function(mat_dim_1, mat = movie_train){
       mat_weight[i, j] <- weight
       mat_weight[j, i] <- weight
     }
-    
+    print(i)
+    print(Sys.time())
+    print(weight)
   }
   return(mat_weight)
 }
+
 
 ## Variance Weighting
 find_var <- function(mat=movie_train){
@@ -163,14 +166,15 @@ pred.matrix.movie <- function(testdat = movie_test, traindat = movie_train, simw
     neighbor.ratings = traindat[top.neighbors[[i]], train.col]
     if(length(top.neighbors[[i]]) <2){
       if(length(top.neighbors[[i]]) <1){
-        prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i] + (neighbor.ratings-neighbor.avg[top.neighbors[[i]]]) * neighbor.weights / sum(neighbor.weights, na.rm = T),0)
+        prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i],0)
+        
       }
       else{
-        prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i],0) 
+        prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i] + (neighbor.ratings-neighbor.avg[top.neighbors[[i]]]) * neighbor.weights / sum(neighbor.weights, na.rm = T),0)
       }
     }
     else{
-      prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i] + apply((neighbor.ratings-neighbor.avg[top.neighbors[[i]]]) * neighbor.weights, 2, sum, na.rm=T) / sum(neighbor.weights, na.rm = T), 0)
+      prediction.matrix[i,!test.loc[i,]] = round(avg.ratings[i] + apply((neighbor.ratings-neighbor.avg[top.neighbors[[i]]]) * neighbor.weights, 2, sum, na.rm=T) / sum(neighbor.weights, na.rm = T),0)
     }
     
   }
@@ -232,8 +236,8 @@ rank_score <- function(predicted_test,true_test){
 ## ROC
 evaluation.roc <- function(roc_value, mat, mat.true){
   mat.criterion <- matrix(roc_value, nrow = nrow(mat), ncol = ncol(mat))
-  same_num <- sum((mat >= mat.criterion) == (mat.true >= mat.criterion))
-  n <- sum(mat != matrix(0, nrow=nrow(mat), ncol=ncol(mat)))
+  same_num <- sum((mat >= mat.criterion) == (mat.true >= mat.criterion), na.rm=TRUE)
+  n <- sum(!is.na(mat))
   return(same_num/n)
 }
 
