@@ -1,25 +1,27 @@
-simrank <- function(train_data, C){
+simrank <- function(train_data, C=0.8){
   ###
   # this part is left for later 
   # trasform of train_data
   # if like, not NA
   # if not like, NA
+  train_data[train_data<4] <- NA
   
   ###
   
   num_user <- nrow(train_data)
   num_item <- ncol(train_data)
   
+  index_mat <- !is.na(train_data)
   ## initialize
   user_sim <- diag(1,nrow = num_user)
   item_sim <- diag(1,nrow = num_item)
   
-  for(iter in 1:8){
+  for(iter in 1:1){
     ###### update user_sim
     for(i in 1:(num_user-1)){
       for(j in (i+1):num_user){
-        index_i <- !is.na(train_data[i,])
-        index_j <- !is.na(train_data[j,])
+        index_i <- index_mat[i,]
+        index_j <- index_mat[j,]
         user_sim[i,j] <- C * mean(item_sim[index_i,index_j])
         user_sim[j,i] <- user_sim[i,j]
         
@@ -28,8 +30,8 @@ simrank <- function(train_data, C){
     ###### update item_sim
     for(i in 1:(num_item-1)){
       for(j in (i+1):num_item){
-        index_i <- !is.na(train_data[,i])
-        index_j <- !is.na(train_data[,j])
+        index_i <- index_mat[,i]
+        index_j <- index_mat[,j]
         item_sim[i,j] <- C * mean(user_sim[index_i,index_j])
         item_sim[j,i] <- item_sim[i,j]
         
@@ -48,3 +50,8 @@ example
 
 round(simrank(example,C=0.8)[[1]],3)
 round(simrank(example,C=0.8)[[2]],3)
+
+load('../output/movie_train.RData')
+result <- simrank(movie_train)
+user_sim <- result[[1]]
+item_sim <- result[[2]]
