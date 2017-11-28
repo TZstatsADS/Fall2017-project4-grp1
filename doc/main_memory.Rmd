@@ -18,7 +18,7 @@ Convert the original dataset to a matrix which rows represents users and columns
 For dataset 1 (MS), we assign 0 to those items which users never clicked.
 For dataset 2 (Movie), we assign NA to those items which users never rated.
 ```{r}
-source("../lib/CF_memoryBased.R")
+source("../lib/memoryBased.R")
 movie_train <- Transformer(movie_train)
 movie_test <- Transformer(movie_test)
 save(movie_train, file = "../output/movie_train.RData")

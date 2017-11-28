@@ -150,7 +150,7 @@ neighbors.select <- function(simweights, thresholding = 0.5){
 }
 
 ## Prediction
-pred.matrix.movie <- function(testdat ＝ movie_test, traindat = movie_train, simweights, top.neighbors){
+pred.matrix.movie <- function(testdat = movie_test, traindat = movie_train, simweights, top.neighbors){
   prediction.matrix = matrix(NA, ncol = ncol(testdat), nrow = nrow(testdat))
   test.loc = is.na(testdat)
   avg.ratings = apply(traindat, 1, mean, na.rm = T)
