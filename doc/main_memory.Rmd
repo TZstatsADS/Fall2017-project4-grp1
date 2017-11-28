@@ -1,0 +1,210 @@
+---
+title: "main"
+author: "Jing Zhao (jz2786)"
+date: "11/28/2017"
+output: pdf_document
+---
+
+## Load Data
+```{r}
+movie_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
+movie_test <- read.csv("../data/data_sample/eachmovie_sample/data_test.csv")
+MS_train <- read.csv("../data/data_sample/MS_sample/data_train.csv")
+MS_test <- read.csv("../data/data_sample/MS_sample/data_test.csv")
+```
+
+## Transformation
+Convert the original dataset to a matrix which rows represents users and columns represents items
+For dataset 1 (MS), we assign 0 to those items which users never clicked.
+For dataset 2 (Movie), we assign NA to those items which users never rated.
+```{r}
+source("../lib/CF_memoryBased.R")
+movie_train <- Transformer(movie_train)
+movie_test <- Transformer(movie_test)
+save(movie_train, file = "../output/movie_train.RData")
+save(movie_test, file = "../output/movie_test.RData")
+
+MS_train <- Transformer2(MS_train)
+MS_test <- Transformer2(MS_test)
+save(MS_train, file = "../output/MS_train.RData")
+save(MS_test, file = "../output/MS_test.RData")
+```
+
+## Calculate similarity weights 
+Pearson Correlation & Spearman Correlation & Vector Similarity
+```{r}
+# Dataset 2 (Movie)
+pearson_weight <- cal_weight(movie_train,'pearson')
+spearman_weight <- cal_weight(movie_train,'spearman')
+vector_weight <- cal_weight(movie_train,'vector')
+
+pearson_weight[is.na(pearson_weight)] = 0
+spearman_weight[is.na(spearman_weight)] = 0
+vector_weight[is.na(vector_weight)] = 0
+ 
+save(pearson_weight,file = './pearson_weight.RData')
+save(spearman_weight,file='./spearman_weight.RData')
+save(vector_weight,file = './vector_weight.RData')
+ 
+# Dataset 1 (MS)
+pearson_weight_MS <- cal_weight(MS_train,'pearson')
+spearman_weight_MS <- cal_weight(MS_train,'spearman')
+vector_weight_MS <- cal_weight(MS_train,'vector')
+
+pearson_weight_MS[is.na(pearson_weight_MS)] = 0
+spearman_weight_MS[is.na(spearman_weight_MS)] = 0
+vector_weight_MS[is.na(vector_weight_MS)] = 0
+ 
+save(pearson_weight_MS,file = './pearson_weight_MS.RData')
+save(spearman_weight_MS,file='./spearman_weight_MS.RData')
+save(vector_weight_MS,file = './vector_weight_MS.RData')
+```
+
+## Significance Weighting
+```{r}
+# Dataset 2 (Movie)
+mat_significance_weight_movie <- significance_weight_matrix(dim(movie_train)[1], mat = movie_train)
+mat_significance_weight_movie[is.na(mat_significance_weight_movie)] = 0
+save(mat_significance_weight_movie, file = "significance_weight.RData")
+
+# Dataset 1 (MS)
+mat_significance_weight_MS <- significance_weight_matrix(dim(MS_train)[1], mat = MS_train)
+mat_significance_weight_MS[is.na(mat_significance_weight_MS)] = 0
+save(mat_significance_weight_MS, file = "significance_weight2.RData")
+```
+
+## Variance Weighting
+```{r}
+# Dataset 2 (Movie)
+mat_variance_weight_movie <- variance_weight_matrix(dim(movie_train)[1], mat = movie_train)
+mat_variance_weight_movie[is.na(mat_variance_weight_movie)] = 0
+save(mat_variance_weight_movie, file = "variance_weight.RData")
+
+# Dataset 1 (MS)
+mat_variance_weight_MS <- variance_weight_matrix(dim(MS_train)[1], mat = MS_train)
+mat_variance_weight_MS[is.na(mat_variance_weight_MS)] = 0
+save(mat_variance_weight_MS, file = "variance_weight2.RData")
+```
+
+## Neighbors Selection & Rating Normalization
+Neighbors Selection Methods: Weight Threshold
+Rating Normalization Methods: Deviation for Mean
+```{r}
+# Pearson
+pearson.movie.neighbor = neighbors.select(pearson_weight)
+pearson.MS.neighbor = neighbors.select(pearson_weight_MS)
+pearson.movie.pred = pred.matrix.movie(pearson_weight, pearson.movie.neighbor)
+pearson.MS.pred = pred.matrix.MS(pearson_weight_MS, pearson.MS.neighbor)
+
+# Spearman 
+spearman.movie.neighbor = neighbors.select(spearman_weight)
+spearman.MS.neighbor = neighbors.select(spearman_weight_MS)
+spearman.movie.pred = pred.matrix.movie(spearman_weight, spearman.movie.neighbor)
+spearman.MS.pred = pred.matrix.MS(spearman_weight_MS, spearman.MS.neighbor)
+
+# Vector 
+vector.movie.neighbor = neighbors.select(vector_weight)
+vector.MS.neighbor = neighbors.select(vector_weight_MS)
+vector.movie.pred = pred.matrix.movie(vector_weight, vector.movie.neighbor)
+vector.MS.pred = pred.matrix.MS(vector_weight_MS, vector.MS.neighbor)
+
+# Pearson + Sig
+pearson.sig.movie = mat_significance_weight_movie * pearson_weight
+pearson.sig.MS = mat_significance_weight_MS * pearson_weight_MS
+pearson.sig.movie.neighbor =  neighbors.select(pearson.sig.movie)
+pearson.sig.MS.neighbor = neighbors.select(pearson.sig.MS)
+pearson.sig.movie.pred = pred.matrix.movie(pearson.sig.movie, pearson.sig.movie.neighbor)
+pearson.sig.MS.pred = pred.matrix.MS(pearson.sig.MS, pearson.sig.MS.neighbor)
+
+# Spearman + Sig
+spearman.sig.movie = mat_significance_weight_movie * spearman_weight
+spearman.sig.MS = mat_significance_weight_MS * spearman_weight_MS
+spearman.sig.movie.neighbor =  neighbors.select(spearman.sig.movie)
+spearman.sig.MS.neighbor = neighbors.select(spearman.sig.MS)
+spearman.sig.movie.pred = pred.matrix.movie(spearman.sig.movie, spearman.sig.movie.neighbor)
+spearman.sig.MS.pred = pred.matrix.MS(spearman.sig.MS, spearman.sig.MS.neighbor)
+
+# Vector + Sig
+vector.sig.movie = mat_significance_weight_movie * vector_weight
+vector.sig.MS = mat_significance_weight_MS * vector_weight_MS
+vector.sig.movie.neighbor =  neighbors.select(vector.sig.movie)
+vector.sig.MS.neighbor = neighbors.select(vector.sig.MS)
+vector.sig.movie.pred = pred.matrix.movie(vector.sig.movie, vector.sig.movie.neighbor)
+vector.sig.MS.pred = pred.matrix.MS(vector.sig.MS, vector.sig.MS.neighbor)
+
+# Pearson + Var
+pearson.var.movie = mat_variance_weight_movie * pearson_weight
+pearson.var.MS = mat_variance_weight_MS * pearson_weight_MS
+pearson.var.movie.neighbor =  neighbors.select(pearson.var.movie)
+pearson.var.MS.neighbor = neighbors.select(pearson.var.MS)
+pearson.var.movie.pred = pred.matrix.movie(pearson.var.movie, pearson.var.movie.neighbor)
+pearson.var.MS.pred = pred.matrix.MS(pearson.var.MS, pearson.var.MS.neighbor)
+
+# Spearman + Var
+spearman.var.movie = mat_variance_weight_movie * spearman_weight
+spearman.var.MS = mat_variance_weight_MS * spearman_weight_MS
+spearman.var.movie.neighbor =  neighbors.select(spearman.var.movie)
+spearman.var.MS.neighbor = neighbors.select(spearman.var.MS)
+spearman.var.movie.pred = pred.matrix.movie(spearman.var.movie, spearman.var.movie.neighbor)
+spearman.var.MS.pred = pred.matrix.MS(spearman.var.MS, spearman.var.MS.neighbor)
+
+# Vector + Var
+vector.var.movie = mat_variance_weight_movie * vector_weight
+vector.var.MS = mat_variance_weight_MS * vector_weight_MS
+vector.var.movie.neighbor =  neighbors.select(vector.var.movie)
+vector.var.MS.neighbor = neighbors.select(vector.var.MS)
+vector.var.movie.pred = pred.matrix.movie(vector.var.movie, vector.var.movie.neighbor)
+vector.var.MS.pred = pred.matrix.MS(vector.var.MS, vector.var.MS.neighbor)
+
+# Pearson + Sig + Var
+pearson.sig.var.movie = pearson.sig.movie * mat_variance_weight_movie
+pearson.sig.var.MS = pearson.sig.MS * mat_variance_weight_MS
+pearson.sig.var.movie.neighbor =  neighbors.select(pearson.sig.var.movie)
+pearson.sig.var.MS.neighbor = neighbors.select(pearson.sig.var.MS)
+pearson.sig.var.movie.pred = pred.matrix.movie(pearson.sig.var.movie, pearson.sig.var.movie.neighbor)
+pearson.sig.var.MS.pred = pred.matrix.MS(pearson.sig.var.MS, pearson.sig.var.MS.neighbor)
+
+# Spearman + Sig + Var
+spearman.sig.var.movie = spearman.sig.movie * mat_variance_weight_movie
+spearman.sig.var.MS = spearman.sig.MS * mat_variance_weight_MS
+spearman.sig.var.movie.neighbor =  neighbors.select(spearman.sig.var.movie)
+spearman.sig.var.MS.neighbor = neighbors.select(spearman.sig.var.MS)
+spearman.sig.var.movie.pred = pred.matrix.movie(spearman.sig.var.movie, spearman.sig.var.movie.neighbor)
+spearman.sig.var.MS.pred = pred.matrix.MS(spearman.sig.var.MS, spearman.sig.var.MS.neighbor)
+
+# Vector + Sig + Var
+vector.sig.var.movie = vector.sig.movie * mat_variance_weight_movie
+vector.sig.var.MS = vector.sig.var.MS * mat_variance_weight_MS
+vector.sig.var.movie.neighbor =  neighbors.select(vector.sig.var.movie)
+vector.sig.var.MS.neighbor = neighbors.select(vector.sig.var.MS)
+vector.sig.var.movie.pred = pred.matrix.movie(vector.sig.var.movie, vector.sig.var.movie.neighbor)
+vector.sig.var.MS.pred = pred.matrix.MS(vector.sig.var.MS, vector.sig.var.MS.neighbor)
+```
+
+## Evaluation - MAE
+```{r}
+# Movie
+pearson.movie.mae = evaluation.mae(pearson.movie.pred, movie_test)
+pearson.sig.movie.mae = evaluation.mae(pearson.sig.movie.pred, movie_test)
+pearson.var.movie.mae = evaluation.mae(pearson.var.movie.pred, movie_test)
+pearson.sig.var.movie.mae = evaluation.mae(pearson.sig.var.movie.pred, movie_test)
+```
+
+## Evaluation - ROC
+```{r}
+# Movie
+pearson.movie.roc = evaluation.roc(pearson.movie.pred, movie_test)
+pearson.sig.movie.roc = evaluation.roc(pearson.sig.movie.pred, movie_test)
+pearson.var.movie.roc = evaluation.roc(pearson.var.movie.pred, movie_test)
+pearson.sig.var.movie.roc = evaluation.roc(pearson.sig.var.movie.pred, movie_test)
+```
+
+## Evaluation - Rank Score
+```{r}
+# MS
+pearson.MS.rankscore = rank_score(pearson.MS.pred, MS_test)
+pearson.sig.MS.rankscore = rank_score(pearson.sig.MS.pred, MS_test)
+pearson.var.MS.rankscore = rank_score(pearson.var.MS.pred, MS_test)
+pearson.sig.var.MS.rankscore = rank_score(pearson.sig.var.MS.pred, MS_test)
+```
+
