@@ -20,9 +20,13 @@ In this project, we used memory-based algorithm and model-based algorithm to do 
 **Contribution statement**: 
 
 Huang, Christina: implementation of cluster model, optimization of cluster model parameters
-Lin, Han: implementation of simrank, pearson similarity, spearman similarity, vector similarity, rank score evaluation, 
+
+Lin, Han: implementation of simrank, pearson similarity, spearman similarity, vector similarity, rank score evaluation
+
 Tao, Siyi: variance weighting, significance weighting, ROC evaluation, main.Rmd, github organization, data cleaning
+
 Yang, Hongyang: 
+
 Zhao, Jing: simrank, selecting neighbors, rating normalization, MAE evaluation, main.Rmd, presentation, data cleaning
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
