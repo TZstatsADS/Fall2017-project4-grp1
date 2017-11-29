@@ -13,6 +13,9 @@ Term: Fall 2017
 	+ Yang, Hongyang
 	+ Zhao, Jing
 + Project summary: 
+
+
+
 	
 **Contribution statement**: 
 ([default](doc/a_note_on_contributions.md)) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
