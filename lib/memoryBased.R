@@ -79,7 +79,7 @@ cal_weight <- function(data,method){
 significance_weight_assign <- function(i, j, mat=movie_train, not_rate = 0 ){
   r_i <- mat[i, ]
   r_j <- mat[j, ]
-  n <- length(intersect(which(r_i != 0), which(r_j != 0)))
+  n <- length(intersect(which(!is.na(r_i)), which(!is.na(r_j))))
   if (n >= 50){
     return(1)
   }
@@ -106,9 +106,9 @@ significance_weight_matrix <- function(mat_dim_1, mat = movie_train){
 
 ## Variance Weighting
 find_var <- function(mat=movie_train){
-  var_vector <- apply(movie_train, 2, var)
-  var_max <- max(var_vector)
-  var_min <- min(var_vector)
+  var_vector <- apply(mat, 2, var, na.rm=TRUE)
+  var_max <- max(var_vector, na.rm = TRUE)
+  var_min <- min(var_vector, na.rm = TRUE)
   v <- (var_vector - var_min)/var_max
   return(v)
 }
@@ -116,7 +116,8 @@ find_var <- function(mat=movie_train){
 variance_weight_assign <- function(i, j, v, mat=movie_train){
   r_i <- scale(mat[i, ])
   r_j <- scale(mat[j, ])
-  weight <- sum(v*r_i*r_j)/sum(v)
+  index <- intersect(which(!is.na(r_i)), which(!is.na(r_j)))
+  weight <- sum(v[index]*r_i[index]*r_j[index])/sum(v[index])
   return(weight)
 }
 
