@@ -5,6 +5,8 @@ date: "11/28/2017"
 output: pdf_document
 ---
 
+# Memory-Based Algorithm
+
 ## Load Data
 ```{r}
 movie_train <- read.csv("../data/data_sample/eachmovie_sample/data_train.csv")
@@ -31,59 +33,69 @@ MS_test <- Transformer2(MS_test)
 ```
 
 ## Calculate similarity weights 
+
 Pearson Correlation & Spearman Correlation & Vector Similarity
 ```{r}
-# Dataset 2 (Movie)
-pearson_weight <- cal_weight(movie_train,'pearson')
-spearman_weight <- cal_weight(movie_train,'spearman')
-vector_weight <- cal_weight(movie_train,'vector')
 
-pearson_weight[is.na(pearson_weight)] = 0
-spearman_weight[is.na(spearman_weight)] = 0
-vector_weight[is.na(vector_weight)] = 0
- 
-save(pearson_weight,file = './pearson_weight.RData')
-save(spearman_weight,file='./spearman_weight.RData')
-save(vector_weight,file = './vector_weight.RData')
+# Dataset 2 (Movie)
+
+# pearson_weight <- cal_weight(movie_train,'pearson')
+# spearman_weight <- cal_weight(movie_train,'spearman')
+# vector_weight <- cal_weight(movie_train,'vector')
+# 
+# pearson_weight[is.na(pearson_weight)] = 0
+# spearman_weight[is.na(spearman_weight)] = 0
+# vector_weight[is.na(vector_weight)] = 0
+#  
+# save(pearson_weight,file = './pearson_weight.RData')
+# save(spearman_weight,file='./spearman_weight.RData')
+# save(vector_weight,file = './vector_weight.RData')
  
 # Dataset 1 (MS)
-pearson_weight_MS <- cal_weight(MS_train,'pearson')
-spearman_weight_MS <- cal_weight(MS_train,'spearman')
-vector_weight_MS <- cal_weight(MS_train,'vector')
 
-pearson_weight_MS[is.na(pearson_weight_MS)] = 0
-spearman_weight_MS[is.na(spearman_weight_MS)] = 0
-vector_weight_MS[is.na(vector_weight_MS)] = 0
- 
-save(pearson_weight_MS,file = './pearson_weight_MS.RData')
-save(spearman_weight_MS,file='./spearman_weight_MS.RData')
-save(vector_weight_MS,file = './vector_weight_MS.RData')
+# pearson_weight_MS <- cal_weight(MS_train,'pearson')
+# spearman_weight_MS <- cal_weight(MS_train,'spearman')
+# vector_weight_MS <- cal_weight(MS_train,'vector')
+# 
+# pearson_weight_MS[is.na(pearson_weight_MS)] = 0
+# spearman_weight_MS[is.na(spearman_weight_MS)] = 0
+# vector_weight_MS[is.na(vector_weight_MS)] = 0
+#  
+# save(pearson_weight_MS,file = './pearson_weight_MS.RData')
+# save(spearman_weight_MS,file='./spearman_weight_MS.RData')
+# save(vector_weight_MS,file = './vector_weight_MS.RData')
+
+
 ```
 
 ## Significance Weighting
 ```{r}
 # Dataset 2 (Movie)
-mat_significance_weight_movie <- significance_weight_matrix(dim(movie_train)[1], mat = movie_train)
-mat_significance_weight_movie[is.na(mat_significance_weight_movie)] = 0
-save(mat_significance_weight_movie, file = "significance_weight.RData")
+
+# mat_significance_weight_movie <- significance_weight_matrix(dim(movie_train)[1], mat = movie_train)
+# mat_significance_weight_movie[is.na(mat_significance_weight_movie)] = 0
+# save(mat_significance_weight_movie, file = "significance_weight.RData")
 
 # Dataset 1 (MS)
-mat_significance_weight_MS <- significance_weight_matrix(dim(MS_train)[1], mat = MS_train)
-mat_significance_weight_MS[is.na(mat_significance_weight_MS)] = 0
-save(mat_significance_weight_MS, file = "significance_weight2.RData")
+
+# mat_significance_weight_MS <- significance_weight_matrix(dim(MS_train)[1], mat = MS_train)
+# mat_significance_weight_MS[is.na(mat_significance_weight_MS)] = 0
+# save(mat_significance_weight_MS, file = "significance_weight2.RData")
 ```
 
 ## Variance Weighting
 ```{r}
 # Dataset 2 (Movie)
-mat_variance_weight_movie <- variance_weight_matrix(dim(movie_train)[1], mat = movie_train)
-mat_variance_weight_movie[is.na(mat_variance_weight_movie)] = 0
-save(mat_variance_weight_movie, file = "variance_weight.RData")
+
+# mat_variance_weight_movie <- variance_weight_matrix(dim(movie_train)[1], mat = movie_train)
+# mat_variance_weight_movie[is.na(mat_variance_weight_movie)] = 0
+# save(mat_variance_weight_movie, file = "variance_weight.RData")
 
 # Dataset 1 (MS)
-mat_variance_weight_MS <- variance_weight_matrix(dim(MS_train)[1], mat = MS_train)
-mat_variance_weight_MS[is.na(mat_variance_weight_MS)] = 0
-save(mat_variance_weight_MS, file = "variance_weight2.RData")
+
+# mat_variance_weight_MS <- variance_weight_matrix(dim(MS_train)[1], mat = MS_train)
+# mat_variance_weight_MS[is.na(mat_variance_weight_MS)] = 0
+# save(mat_variance_weight_MS, file = "variance_weight2.RData")
 ```
 
 ```{r}
@@ -336,4 +348,159 @@ vector.var.MS.rankscore
 vector.sig.var.MS.rankscore 
 
 ```
+
+# Model-Based Algorithm
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(text2vec, dplyr, qlcMatrix, kernlab, knitr)
+
+```
+
+## Load Data
+
+```{r}
+load("../output/MS_test.RData")
+load("../output/MS_train.RData")
+
+test_data <- MS_test
+train_data <- MS_train
+```
+
+## Train function
+
+```{r}
+train_func <- function(data, C = 3, tau = 0.05, ITER = 200){
+  # for C >= 4, phi will become too small that nearly converge to zero
+  # thus we choose C = 3 as default
+  #data <- train_data
+  #C <- 15
+  #user <- data[,1]
+  #data <- data[,-1]
+  
+  items <- colnames(data)
+  N_item <- nrow(data)
+  N_user <- ncol(data)
+  #========================
+  # Step 1 - initialization
+  #========================
+  iter <- 1 #iteration
+  check_conv <- Inf
+  
+  mu <- rep(1/C, C)
+  
+  gamma <- array(0, dim = c(2, N_user, C))
+  gamma_1 = matrix(runif(N_user*C, 0, 1), N_user, C)
+  gamma_2 = 1-gamma_1
+  gamma[1,,] = gamma_1
+  gamma[2,,] = gamma_2
+  
+  phi <- matrix(NA, nrow = N_item, ncol = C)
+  pi <- matrix(NA, nrow = N_item, ncol = C)
+  pi_pre <- matrix(0, nrow = N_item, ncol = C)
+
+  #========================  
+  # Step 2 - Expectation
+  #========================
+  while(check_conv > tau & iter < ITER){
+    for(i in 1:N_item){ #get phi
+      sub_mu_phi <- array(0,C) 
+      for(j in 1:N_user) {sub_mu_phi <- sub_mu_phi + log(gamma[data[i,j]+1, j,])}
+      phi[i, ] <- exp(sub_mu_phi)
+    }
+    tmp_1 <- mu * phi
+    pi <- tmp_1/apply(tmp_1, 1, sum)
+    
+    #========================
+    # Step 3 - Maximization
+    #========================
+    mu <- apply(pi, 2, sum)/N_item
+
+    for(c in 1:C){ #for gamma, when k = 1
+      for(j in 1:N_user){
+        sub_sum_pi <- pi[, c] %*% data[, j]
+        gamma[2, j, c] <- sub_sum_pi/sum(pi[ ,c])
+        gamma[1, j, c] <- 1 - gamma[2, j, c] 
+      }
+    }
+    
+    check_conv <- norm(pi - pi_pre)
+    print(check_conv)
+    print(iter)
+    
+    pi_pre <- pi
+    iter = iter + 1
+  }
+    
+  return(list("pi" = pi, "gamma" = gamma, "mu" = mu, "items" = items))
+}  
+```
+
+## Prediction Function
+
+```{r}
+#Generating prediction
+pred_func <- function(data, gamma, mu, pi, items){
+  data[is.na(data)] <- 0
+  item_test <- colnames(data)
+  order <- match(item_test, items)
+  
+  N_item <- nrow(data)
+  N_user <- ncol(data)
+  predictions <- as.data.frame(matrix(NA, nrow = N_item, ncol = N_user))
+  names(predictions) <- item_test
+
+  user.cluster <- apply(pi, 1, which.max)
+  error <- 0
+  
+  for(i in 1:N_item){
+    for(j in 1:ncol(predictions)){
+      cluster <- user.cluster[i]
+      index <- order[j]
+      predictions[i,j] <- which.max(gamma[, index, cluster]) - 1
+    }
+  }
+  
+  save(predictions, file = "../data/cluster_prediction.Rdata")
+  return(predictions)
+}
+```
+
+## Ranking score
+
+```{r}
+rank_score <- function(predicted_test,true_test){
+  ## function to calculate rank score of predicted value
+  ## input: predicted_test - predicted value matrix of test data
+  ##        true_test - test data matrix
+  ## output: rank score
+  d <- 0.02
+  rank_mat_pred <- ncol(predicted_test)+1-t(apply(predicted_test,1,function(x){return(rank(x,ties.method = 'first'))}))
+  rank_mat_test <- ncol(true_test)+1-t(apply(true_test,1,function(x){return(rank(x,ties.method = 'first'))}))
+  vec = ifelse(true_test - d > 0, true_test - d, 0)
+  R_a <- apply(1/(2^((rank_mat_pred-1)/4)) * vec,1,sum)
+  R_a_max <- apply(1/(2^((rank_mat_test-1)/4)) * vec,1,sum)
+  
+  R <- 100*sum(R_a)/sum(R_a_max)
+  return(R)
+}
+```
+
+
+```{r}
+cluster_train <- train_func(train_data, C = 3)
+  
+gamma <- cluster_train$gamma
+mu <- cluster_train$mu
+pi <- cluster_train$pi
+items <- cluster_train$items
+
+cluster_pred <- pred_func(test_data, gamma, mu, pi, items)
+rank_score(predicted_test = cluster_pred,true_test = test_data)
+```
+
+
+
+
+
 
