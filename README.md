@@ -25,7 +25,7 @@ In this project, we used memory-based algorithm and model-based algorithm to do 
 
 + Tao, Siyi: variance weighting, significance weighting, ROC evaluation, main.Rmd, github organization, data cleaning
 
-+ Yang, Hongyang: 
++ Yang, Hongyang: implementation of simrank function on moive data
 
 + Zhao, Jing: simrank, selecting neighbors, rating normalization, MAE evaluation, main.Rmd, presentation, data cleaning
 
