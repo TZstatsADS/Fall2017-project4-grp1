@@ -500,6 +500,44 @@ rank_score(predicted_test = cluster_pred,true_test = test_data)
 ```
 
 
+# Evaluation comparison 
+```{r}
+mae = c(1.086954,	1.08805,	1.069108,	1.049705,1.033551,	1.204552,	1.057466,	1.037728,1.068782,1.069955,	1.081626,	1.251025,1.03158,	1.038538,	1.057548,	1.062456)
+roc = c(0.7501901,0.7492996,	0.7350657,	0.742455, 0.7625856,	0.761646,	0.7388531,	0.7459058,0.7396295,	0.7391965,	0.7496398,	0.7371886,0.7532392,	0.7518332,	0.7611719,	0.7431254)
+rank.score = c(35.63616,	35.63616,	36.25918,41.38228,	41.38228,	41.51407,42.6521,	42.6521,	42.85452,40.48851,	40.48851,	40.56334)
+methods = c('Pearson', 'Spearman','Vector','Simrank','Pearson', 'Spearman','Vector','Simrank','Pearson', 'Spearman','Vector','Simrank','Pearson', 'Spearman','Vector','Simrank')
+weights = c('None','None','None','None','Sig','Sig','Sig','Sig','Var','Var','Var','Var','Sig+Var','Sig+Var','Sig+Var','Sig+Var')
+movie_eva_results = cbind(methods,weights,roc,mae)
+methods1 = c('Pearson', 'Spearman','Vector','Pearson', 'Spearman','Vector','Pearson', 'Spearman','Vector','Pearson', 'Spearman','Vector')
+weights1 = c('None','None','None','Sig','Sig','Sig','Var','Var','Var','Sig+Var','Sig+Var','Sig+Var')
+ms_eva_results = cbind(methods1,weights1,rank.score)
+# save(movie_eva_results,file = '../output/movie_eva_results.RData')
+# save(ms_eva_results,file = '../output/ms_eva_results.RData')
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+movie_eva_results = data.frame(movie_eva_results)
+#movie MAE
+ggplot(data=movie_eva_results, aes(x=as.factor(weights), y=mae, group = methods, colour = methods)) +
+    geom_line() +
+    geom_point( size=4, shape=21, fill="white") + labs(x = 'Weights', y = 'MAE') + ggtitle('MAE FOR MOVIE')
+#movie ROC
+ggplot(data=movie_eva_results, aes(x=as.factor(weights), y=roc, group = methods, colour = methods)) +
+    geom_line() +
+    geom_point( size=4, shape=21, fill="white") + labs(x = 'Weights', y = 'MAE') + ggtitle('ROC FOR MOVIE')
+# ms RANK SCORE
+ms_eva_results = data.frame(ms_eva_results)
+ggplot(data=ms_eva_results, aes(x=as.factor(weights1), y=rank.score, group = methods1, colour = methods1)) +
+    geom_line() +
+    geom_point( size=4, shape=21, fill="white") + labs( x = 'Weights',y = 'Rank Score')+ ggtitle('RANK SCORE FOR MS')
+#CLUSTER NUMBER COMPARISON
+cluster = data.frame(matrix(c(2,3,5,10,25.18339,26.35235,22.96647,21.1),ncol = 2))
+ggplot(cluster, aes(x=X1, y=X2)) + geom_line(col = 'pink') +geom_point( size=4, shape=21, fill="white") +
+  labs( x = 'Cluster Number',y = 'Rank Score')+ ggtitle('RANK SCORE FOR CLUSTER MODEL')
+```
+
 
 
 
