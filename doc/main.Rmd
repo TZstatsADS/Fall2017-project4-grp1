@@ -532,6 +532,11 @@ ms_eva_results = data.frame(ms_eva_results)
 ggplot(data=ms_eva_results, aes(x=as.factor(weights1), y=rank.score, group = methods1, colour = methods1)) +
     geom_line() +
     geom_point( size=4, shape=21, fill="white") + labs( x = 'Weights',y = 'Rank Score')+ ggtitle('RANK SCORE FOR MS')
+
+#CLUSTER NUMBER COMPARISON
+cluster = data.frame(matrix(c(2,3,5,8,41.56,41.10,38.84,38.10),ncol = 2))
+ggplot(cluster, aes(x=X1, y=X2)) + geom_line(col = 'pink') +geom_point( size=4, shape=21, fill="white") +
+  labs( x = 'Cluster Number',y = 'Rank Score')+ ggtitle('RANK SCORE FOR CLUSTER MODEL')
 ```
 
 
