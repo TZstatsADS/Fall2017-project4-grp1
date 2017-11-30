@@ -450,14 +450,14 @@ pred_func <- function(data, gamma, mu, pi, items){
   predictions <- as.data.frame(matrix(NA, nrow = N_item, ncol = N_user))
   names(predictions) <- item_test
 
-  user.cluster <- apply(pi, 1, which.max)
+  user_cluster <- apply(pi, 1, which.max)
   error <- 0
   
   for(i in 1:N_item){
-    for(j in 1:ncol(predictions)){
-      cluster <- user.cluster[i]
+    for(j in 1:N_user){
+      cluster <- user_cluster[i]
       index <- order[j]
-      predictions[i,j] <- which.max(gamma[, index, cluster]) - 1
+      predictions[i,j] <- gamma[2, index, cluster]*mu[cluster]
     }
   }
   
@@ -486,9 +486,8 @@ rank_score <- function(predicted_test,true_test){
 }
 ```
 
-
 ```{r}
-cluster_train <- train_func(train_data, C = 3)
+cluster_train <- train_func(train_data, C = 5)
   
 gamma <- cluster_train$gamma
 mu <- cluster_train$mu
@@ -498,6 +497,7 @@ items <- cluster_train$items
 cluster_pred <- pred_func(test_data, gamma, mu, pi, items)
 rank_score(predicted_test = cluster_pred,true_test = test_data)
 ```
+
 
 
 # Evaluation comparison 
@@ -532,10 +532,6 @@ ms_eva_results = data.frame(ms_eva_results)
 ggplot(data=ms_eva_results, aes(x=as.factor(weights1), y=rank.score, group = methods1, colour = methods1)) +
     geom_line() +
     geom_point( size=4, shape=21, fill="white") + labs( x = 'Weights',y = 'Rank Score')+ ggtitle('RANK SCORE FOR MS')
-#CLUSTER NUMBER COMPARISON
-cluster = data.frame(matrix(c(2,3,5,10,25.18339,26.35235,22.96647,21.1),ncol = 2))
-ggplot(cluster, aes(x=X1, y=X2)) + geom_line(col = 'pink') +geom_point( size=4, shape=21, fill="white") +
-  labs( x = 'Cluster Number',y = 'Rank Score')+ ggtitle('RANK SCORE FOR CLUSTER MODEL')
 ```
 
 
